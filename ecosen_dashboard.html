@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EcoSen — Tableau de bord</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+    :root{--vert:#1A7A4A;--vert-clair:#2ECC71;--or:#D4A017;--fond:#0D1F15;--fond2:#112019;--carte:#162B1E;--bordure:#1E3D28;--texte:#E8F5EE;--texte2:#7DB896;--rouge:#E74C3C;--orange:#F39C12;--bleu:#3498DB}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Space Grotesk',sans-serif;background:var(--fond);color:var(--texte);min-height:100vh}
+    .sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--fond2);border-right:1px solid var(--bordure);display:flex;flex-direction:column;padding:24px 0;z-index:100}
+    .logo{padding:0 20px 24px;border-bottom:1px solid var(--bordure)}
+    .logo h1{font-size:22px;font-weight:700;color:var(--vert-clair)}
+    .logo span{color:var(--or)}
+    .logo p{font-size:11px;color:var(--texte2);margin-top:2px}
+    nav a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--texte2);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;transition:all .2s;cursor:pointer}
+    nav a:hover,nav a.actif{color:var(--texte);background:rgba(46,204,113,.08);border-left-color:var(--vert-clair)}
+    .sidebar-bas{padding:16px 20px;border-top:1px solid var(--bordure);font-size:12px;color:var(--texte2)}
+    .statut-api{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .point{width:8px;height:8px;border-radius:50%;background:#555}
+    .point.en-ligne{background:var(--vert-clair);box-shadow:0 0 6px var(--vert-clair)}
+    .point.hors-ligne{background:var(--rouge)}
+    .principal{margin-left:220px;padding:28px;min-height:100vh}
+    .entete{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+    .entete h2{font-size:24px;font-weight:600}
+    .entete p{color:var(--texte2);font-size:14px;margin-top:2px}
+    .btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-vert{background:var(--vert);color:white}.btn-vert:hover{background:var(--vert-clair)}
+    .btn-rouge{background:var(--rouge);color:white}
+    .btn-contour{background:transparent;border:1px solid var(--bordure);color:var(--texte2)}
+    .btn-contour:hover{border-color:var(--vert-clair);color:var(--texte)}
+    .section{display:none}.section.active{display:block}
+    .grille-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+    .kpi{background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+    .kpi::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+    .kpi.vert::before{background:var(--vert-clair)}.kpi.or::before{background:var(--or)}.kpi.rouge::before{background:var(--rouge)}.kpi.bleu::before{background:var(--bleu)}
+    .kpi-label{font-size:12px;color:var(--texte2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-valeur{font-size:36px;font-weight:700;margin:8px 0 4px;font-family:'DM Mono',monospace}
+    .kpi-sous{font-size:12px;color:var(--texte2)}
+    .kpi-icone{position:absolute;top:16px;right:16px;font-size:24px;opacity:.4}
+    .grille-graphiques{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .carte{background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:20px}
+    .carte h3{font-size:14px;font-weight:600;color:var(--texte2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+    .carte canvas{max-height:200px}
+    .tableau-zone{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    thead tr{border-bottom:1px solid var(--bordure)}
+    th{padding:10px 14px;text-align:left;color:var(--texte2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+    td{padding:12px 14px;border-bottom:1px solid rgba(30,61,40,.5)}
+    tr:hover td{background:rgba(46,204,113,.04)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge.attente{background:rgba(243,156,18,.15);color:var(--orange)}
+    .badge.cours{background:rgba(52,152,219,.15);color:var(--bleu)}
+    .badge.traite{background:rgba(46,204,113,.15);color:var(--vert-clair)}
+    .formulaire{max-width:520px}
+    .champ{margin-bottom:16px}
+    .champ label{display:block;font-size:13px;color:var(--texte2);margin-bottom:6px}
+    .champ input,.champ select{width:100%;background:var(--fond2);border:1px solid var(--bordure);color:var(--texte);padding:10px 14px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:14px}
+    .champ input:focus,.champ select:focus{outline:none;border-color:var(--vert-clair)}
+    .alerte{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;display:none}
+    .alerte.succes{background:rgba(46,204,113,.1);border:1px solid var(--vert);color:var(--vert-clair);display:block}
+    .alerte.erreur{background:rgba(231,76,60,.1);border:1px solid var(--rouge);color:var(--rouge);display:block}
+    .zones-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+    .zone-item{background:var(--fond2);border:1px solid var(--bordure);border-radius:8px;padding:14px 10px;text-align:center}
+    .zone-nom{font-size:13px;font-weight:600;margin-bottom:4px}
+    .zone-nb{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--vert-clair)}
+    .zone-label{font-size:10px;color:var(--texte2)}
+    .chargement{display:flex;align-items:center;gap:8px;color:var(--texte2);font-size:13px;padding:20px 0}
+    .spinner{width:16px;height:16px;border:2px solid var(--bordure);border-top-color:var(--vert-clair);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #ecran-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--fond)}
+    .login-boite{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;padding:40px;width:380px}
+    .login-boite h1{font-size:28px;font-weight:700;color:var(--vert-clair);margin-bottom:4px}
+    .login-boite h1 span{color:var(--or)}
+    .login-boite p{color:var(--texte2);font-size:14px;margin-bottom:28px}
+    #app{display:none}
+    .actions-ligne{display:flex;gap:8px}
+  </style>
+</head>
+<body>
+<div id="ecran-login">
+  <div class="login-boite">
+    <h1>Eco<span>Sen</span></h1>
+    <p>Plateforme de gestion des déchets — Dakar</p>
+    <div id="alerte-login"></div>
+    <div class="champ"><label>Nom d'utilisateur</label><input type="text" id="login-user" value="admin"/></div>
+    <div class="champ"><label>Mot de passe</label><input type="password" id="login-mdp" value="ecosen2025"/></div>
+    <button class="btn btn-vert" style="width:100%;padding:12px;font-size:15px;" onclick="seConnecter()">Se connecter</button>
+    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--texte2)">API Railway connectée</p>
+  </div>
+</div>
+<div id="app">
+  <div class="sidebar">
+    <div class="logo"><h1>Eco<span>Sen</span></h1><p>Réseau de surveillance</p></div>
+    <nav>
+      <a class="actif" onclick="afficherSection('tableau-bord',this)"><span>📊</span> Tableau de bord</a>
+      <a onclick="afficherSection('signalements',this)"><span>🗂</span> Signalements</a>
+      <a onclick="afficherSection('ajouter',this)"><span>➕</span> Nouveau signal</a>
+      <a onclick="afficherSection('zones',this)"><span>🗺️</span> Zones</a>
+      <a onclick="afficherSection('utilisateurs',this)"><span>👥</span> Utilisateurs</a>
+    </nav>
+    <div class="sidebar-bas">
+      <div class="statut-api"><div class="point" id="point-statut"></div><span id="texte-statut">Vérification…</span></div>
+      <div id="info-utilisateur" style="margin-bottom:8px"></div>
+      <button class="btn btn-contour" style="width:100%;font-size:12px" onclick="seDeconnecter()">Déconnexion</button>
+    </div>
+  </div>
+  <div class="principal">
+    <div id="tableau-bord" class="section active">
+      <div class="entete"><div><h2>Tableau de bord</h2><p>Vue d'ensemble — EcoSen Dakar</p></div><button class="btn btn-contour" onclick="chargerStats()">↻ Actualiser</button></div>
+      <div id="chargement-stats" class="chargement"><div class="spinner"></div> Chargement…</div>
+      <div class="grille-kpi" id="kpi-zone" style="display:none">
+        <div class="kpi vert"><span class="kpi-icone">📋</span><div class="kpi-label">Total</div><div class="kpi-valeur" id="kpi-total">—</div><div class="kpi-sous">Tous statuts</div></div>
+        <div class="kpi or"><span class="kpi-icone">⏳</span><div class="kpi-label">En attente</div><div class="kpi-valeur" id="kpi-attente">—</div><div class="kpi-sous">À traiter</div></div>
+        <div class="kpi bleu"><span class="kpi-icone">⚙️</span><div class="kpi-label">En cours</div><div class="kpi-valeur" id="kpi-cours">—</div><div class="kpi-sous">En traitement</div></div>
+        <div class="kpi rouge"><span class="kpi-icone">✅</span><div class="kpi-label">Taux traitement</div><div class="kpi-valeur" id="kpi-taux">—</div><div class="kpi-sous">Traités / Total</div></div>
+      </div>
+      <div class="grille-graphiques">
+        <div class="carte"><h3>Répartition par statut</h3><canvas id="graphique-statut"></canvas></div>
+        <div class="carte"><h3>Signalements par zone</h3><canvas id="graphique-zones"></canvas></div>
+      </div>
+    </div>
+    <div id="signalements" class="section">
+      <div class="entete"><div><h2>Signalements</h2><p>Liste complète</p></div><button class="btn btn-vert" onclick="afficherSection('ajouter',null)">+ Nouveau</button></div>
+      <div class="carte">
+        <div id="chargement-signalements" class="chargement"><div class="spinner"></div> Chargement…</div>
+        <div class="tableau-zone" id="tableau-signalements" style="display:none"></div>
+      </div>
+    </div>
+    <div id="ajouter" class="section">
+      <div class="entete"><div><h2>Nouveau signalement</h2><p>Soumettre un signalement</p></div></div>
+      <div class="carte"><div id="alerte-ajout"></div>
+        <div class="formulaire">
+          <div class="champ"><label>Type</label><select id="type-signal"><option>Déchets sauvages</option><option>Déchets ménagers</option><option>Détournement illégal</option><option>Air pollué</option><option>Eau contaminée</option></select></div>
+          <div class="champ"><label>Zone</label><select id="zone-signal"><option>Plateau du Dakar</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Thiès</option><option>Parcelles Assainies</option><option>Yoff</option></select></div>
+          <div class="champ"><label>Date</label><input type="date" id="date-signal"/></div>
+          <button class="btn btn-vert" onclick="ajouterSignalement()">Soumettre</button>
+        </div>
+      </div>
+    </div>
+    <div id="zones" class="section">
+      <div class="entete"><div><h2>Zones</h2><p>Répartition géographique</p></div><button class="btn btn-contour" onclick="chargerZones()">↻ Actualiser</button></div>
+      <div class="carte"><h3>🗺️ Grand Dakar</h3><div class="zones-grid" id="grille-zones"><div class="chargement"><div class="spinner"></div> Chargement…</div></div></div>
+    </div>
+    <div id="utilisateurs" class="section">
+      <div class="entete"><div><h2>Utilisateurs</h2><p>Comptes du système</p></div></div>
+      <div class="carte"><div id="chargement-users" class="chargement"><div class="spinner"></div> Chargement…</div><div id="tableau-users" style="display:none"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+const API='https://ecosen-network-production.up.railway.app';
+let TOKEN='';
+let gS=null,gZ=null;
+async function seConnecter(){
+  const u=document.getElementById('login-user').value;
+  const m=document.getElementById('login-mdp').value;
+  const al=document.getElementById('alerte-login');
+  al.innerHTML='';
+  try{
+    const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nom_utilisateur:u,mot_de_passe:m})});
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.erreur||'Erreur');
+    TOKEN=d.jeton;
+    document.getElementById('ecran-login').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('info-utilisateur').innerHTML='<strong style="color:var(--texte)">'+d.nom_utilisateur+'</strong><br><span style="font-size:11px;color:var(--or)">'+d.rôle+'</span>';
+    verifierAPI();chargerStats();
+  }catch(e){al.innerHTML='<div class="alerte erreur">'+e.message+'</div>';}
+}
+function seDeconnecter(){TOKEN='';document.getElementById('app').style.display='none';document.getElementById('ecran-login').style.display='flex';}
+async function verifierAPI(){
+  try{await fetch(API+'/');document.getElementById('point-statut').className='point en-ligne';document.getElementById('texte-statut').textContent='API en ligne';}
+  catch{document.getElementById('point-statut').className='point hors-ligne';document.getElementById('texte-statut').textContent='Hors ligne';}
+}
+async function chargerStats(){
+  document.getElementById('chargement-stats').style.display='flex';
+  document.getElementById('kpi-zone').style.display='none';
+  try{
+    const r=await fetch(API+'/api/stats',{headers:{'Authorization':'Bearer '+TOKEN}});
+    const d=await r.json();
+    document.getElementById('kpi-total').textContent=d.total;
+    document.getElementById('kpi-attente').textContent=d.enAttente;
+    document.getElementById('kpi-cours').textContent=d.enCours;
+    document.getElementById('kpi-taux').textContent=d.tauxTraitement+'%';
+    document.getElementById('chargement-stats').style.display='none';
+    document.getElementById('kpi-zone').style.display='grid';
+    if(gS)gS.destroy();
+    gS=new Chart(document.getElementById('graphique-statut'),{type:'doughnut',data:{labels:['En attente','En cours','Traités'],datasets:[{data:[d.enAttente,d.enCours,d.total-d.enAttente-d.enCours],backgroundColor:['#F39C12','#3498DB','#2ECC71'],borderWidth:0}]},options:{plugins:{legend:{labels:{color:'#7DB896'}}},cutout:'65%'}});
+    chargerSignalementsPourGraphique();
+  }catch(e){document.getElementById('chargement-stats').innerHTML='<span style="color:var(--rouge)">Erreur: '+e.message+'</span>';}
+}
+async function chargerSignalements(){
+  document.getElementById('chargement-signalements').style.display='flex';
+  document.getElementById('tableau-signalements').style.display='none';
+  try{
+    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
+    const l=await r.json();
+    const z=document.getElementById('tableau-signalements');
+    if(!l.length){z.innerHTML='<p style="color:var(--texte2);padding:20px">Aucun signalement.</p>';}
+    else{z.innerHTML='<table><thead><tr><th>#</th><th>Type</th><th>Zone</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+l.map(s=>'<tr><td style="font-family:monospace;color:var(--texte2)">'+s.id+'</td><td>'+s.type+'</td><td>'+s.zone+'</td><td>'+badge(s.statut)+'</td><td style="font-size:12px;color:var(--texte2)">'+new Date(s.date).toLocaleDateString('fr-FR')+'</td><td><div class="actions-ligne"><button class="btn btn-contour" style="font-size:11px;padding:4px 8px" onclick="changerStatut('+s.id+','En cours')">▶️</button><button class="btn btn-vert" style="font-size:11px;padding:4px 8px" onclick="changerStatut('+s.id+','Traité')">✓</button><button class="btn btn-rouge" style="font-size:11px;padding:4px 8px" onclick="supprimerSignalement('+s.id+')">✕</button></div></td></tr>').join('')+'</tbody></table>';}
+    document.getElementById('chargement-signalements').style.display='none';
+    z.style.display='block';
+  }catch(e){document.getElementById('chargement-signalements').innerHTML='<span style="color:var(--rouge)">Erreur: '+e.message+'</span>';}
+}
+function badge(s){const c=s==='En attente'?'attente':s==='En cours'?'cours':'traite';return '<span class="badge '+c+'">'+s+'</span>';}
+async function changerStatut(id,statut){await fetch(API+'/api/signalements/'+id,{method:'PUT',headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({statut})});chargerSignalements();chargerStats();}
+async function supprimerSignalement(id){if(!confirm('Supprimer ?'))return;await fetch(API+'/api/signalements/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});chargerSignalements();chargerStats();}
+async function ajouterSignalement(){
+  const type=document.getElementById('type-signal').value;
+  const zone=document.getElementById('zone-signal').value;
+  const date=document.getElementById('date-signal').value||new Date().toISOString().split('T')[0];
+  const al=document.getElementById('alerte-ajout');
+  try{
+    const r=await fetch(API+'/api/signalements',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({taper:type,zone,date})});
+    const d=await r.json();
+    al.innerHTML='<div class="alerte succes">✅ Signalement #'+d.identifiant+' ajouté !</div>';
+    setTimeout(()=>al.innerHTML='',3000);
+    chargerStats();
+  }catch(e){al.innerHTML='<div class="alerte erreur">Erreur: '+e.message+'</div>';}
+}
+async function chargerZones(){
+  document.getElementById('grille-zones').innerHTML='<div class="chargement"><div class="spinner"></div> Chargement…</div>';
+  try{
+    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
+    const l=await r.json();
+    const c={};l.forEach(s=>{c[s.zone]=(c[s.zone]||0)+1;});
+    const z=Object.entries(c).sort((a,b)=>b[1]-a[1]);
+    const mx=z[0]?.[1]||1;
+    document.getElementById('grille-zones').innerHTML=z.map(([n,nb])=>{const p=Math.round(nb/mx*100);const col=p>66?'#E74C3C':p>33?'#F39C12':'#2ECC71';return '<div class="zone-item"><div class="zone-nom">'+n+'</div><div class="zone-nb" style="color:'+col+'">'+nb+'</div><div class="zone-label">signalement'+(nb>1?'s':'')+'</div></div>';}).join('');
+    if(gZ)gZ.destroy();
+    gZ=new Chart(document.getElementById('graphique-zones'),{type:'bar',data:{labels:z.map(x=>x[0]),datasets:[{label:'Signalements',data:z.map(x=>x[1]),backgroundColor:'#1A7A4A',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}},y:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}}}}});
+  }catch(e){document.getElementById('grille-zones').innerHTML='<span style="color:var(--rouge)">Erreur</span>';}
+}
+async function chargerSignalementsPourGraphique(){
+  try{
+    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
+    const l=await r.json();
+    const c={};l.forEach(s=>{c[s.zone]=(c[s.zone]||0)+1;});
+    const z=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    if(gZ)gZ.destroy();
+    gZ=new Chart(document.getElementById('graphique-zones'),{type:'bar',data:{labels:z.map(x=>x[0]),datasets:[{label:'Signalements',data:z.map(x=>x[1]),backgroundColor:'#1A7A4A',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}},y:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}}}}});
+  }catch{}
+}
+async function chargerUtilisateurs(){
+  document.getElementById('chargement-users').style.display='flex';
+  document.getElementById('tableau-users').style.display='none';
+  try{
+    const r=await fetch(API+'/api/utilisateurs',{headers:{'Authorization':'Bearer '+TOKEN}});
+    const l=await r.json();
+    const z=document.getElementById('tableau-users');
+    z.innerHTML='<table><thead><tr><th>#</th><th>Nom</th><th>Rôle</th><th>Date création</th></tr></thead><tbody>'+l.map(u=>'<tr><td style="font-family:monospace;color:var(--texte2)">'+u.id+'</td><td>'+u.nom_utilisateur+'</td><td><span class="badge '+(u.role==='admin'?'traite':'cours')+'">'+u.role+'</span></td><td style="font-size:12px;color:var(--texte2)">'+new Date(u.date_creation).toLocaleDateString('fr-FR')+'</td></tr>').join('')+'</tbody></table>';
+    document.getElementById('chargement-users').style.display='none';
+    z.style.display='block';
+  }catch(e){document.getElementById('chargement-users').innerHTML='<span style="color:var(--rouge)">Erreur</span>';}
+}
+function afficherSection(id,lien){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('actif'));
+  document.getElementById(id).classList.add('active');
+  if(lien)lien.classList.add('actif');
+  if(id==='signalements')chargerSignalements();
+  if(id==='zones')chargerZones();
+  if(id==='utilisateurs')chargerUtilisateurs();
+}
+document.getElementById('date-signal').value=new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
