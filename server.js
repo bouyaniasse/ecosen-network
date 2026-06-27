@@ -114,7 +114,7 @@ function auth(req, res, next) {
 
 // Login
 app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
+  const { username = req.body.username || req.body.nom_utilisateur, password = req.body.password || req.body.mot_de_passe } = {};
   const [rows] = await pool.execute(
     "SELECT * FROM utilisateurs WHERE nom_utilisateur = ? AND mot_de_passe = ?",
     [username, password]
