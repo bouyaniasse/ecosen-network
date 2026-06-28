@@ -3,269 +3,742 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>EcoSen — Tableau de bord</title>
+  <title>EcoSen Network — Tableau de bord</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
-    :root{--vert:#1A7A4A;--vert-clair:#2ECC71;--or:#D4A017;--fond:#0D1F15;--fond2:#112019;--carte:#162B1E;--bordure:#1E3D28;--texte:#E8F5EE;--texte2:#7DB896;--rouge:#E74C3C;--orange:#F39C12;--bleu:#3498DB}
+    :root{
+      --vert:#1A7A4A;--vert-clair:#2ECC71;--or:#D4A017;
+      --fond:#0D1F15;--fond2:#112019;--carte:#162B1E;--bordure:#1E3D28;
+      --texte:#E8F5EE;--texte2:#7DB896;--rouge:#E74C3C;--orange:#F39C12;--bleu:#3498DB
+    }
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Space Grotesk',sans-serif;background:var(--fond);color:var(--texte);min-height:100vh}
-    .sidebar{position:fixed;top:0;left:0;width:220px;height:100vh;background:var(--fond2);border-right:1px solid var(--bordure);display:flex;flex-direction:column;padding:24px 0;z-index:100}
-    .logo{padding:0 20px 24px;border-bottom:1px solid var(--bordure)}
+
+    /* LOGIN */
+    #ecran-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--fond)}
+    .login-boite{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;padding:40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+    .login-logo{font-size:32px;font-weight:700;color:var(--vert-clair);margin-bottom:4px}
+    .login-logo span{color:var(--or)}
+    .login-sous{color:var(--texte2);font-size:13px;margin-bottom:8px}
+    .login-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(26,122,74,.2);border:1px solid var(--vert);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--vert-clair);margin-bottom:28px}
+
+    /* SIDEBAR */
+    .sidebar{position:fixed;top:0;left:0;width:230px;height:100vh;background:var(--fond2);border-right:1px solid var(--bordure);display:flex;flex-direction:column;padding:24px 0;z-index:100}
+    .logo{padding:0 20px 20px;border-bottom:1px solid var(--bordure)}
     .logo h1{font-size:22px;font-weight:700;color:var(--vert-clair)}
-    .logo span{color:var(--or)}
+    .logo h1 span{color:var(--or)}
     .logo p{font-size:11px;color:var(--texte2);margin-top:2px}
-    nav a{display:flex;align-items:center;gap:10px;padding:10px 20px;color:var(--texte2);text-decoration:none;font-size:14px;font-weight:500;border-left:3px solid transparent;transition:all .2s;cursor:pointer}
+    nav{flex:1;padding-top:12px}
+    nav a{display:flex;align-items:center;gap:10px;padding:11px 20px;color:var(--texte2);text-decoration:none;font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .2s;cursor:pointer}
     nav a:hover,nav a.actif{color:var(--texte);background:rgba(46,204,113,.08);border-left-color:var(--vert-clair)}
-    .sidebar-bas{padding:16px 20px;border-top:1px solid var(--bordure);font-size:12px;color:var(--texte2)}
-    .statut-api{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-    .point{width:8px;height:8px;border-radius:50%;background:#555}
+    nav a .icone{font-size:16px;width:20px;text-align:center}
+    .sidebar-bas{padding:16px 20px;border-top:1px solid var(--bordure)}
+    .statut-api{display:flex;align-items:center;gap:6px;margin-bottom:10px;font-size:12px;color:var(--texte2)}
+    .point{width:8px;height:8px;border-radius:50%;background:#555;flex-shrink:0}
     .point.en-ligne{background:var(--vert-clair);box-shadow:0 0 6px var(--vert-clair)}
     .point.hors-ligne{background:var(--rouge)}
-    .principal{margin-left:220px;padding:28px;min-height:100vh}
-    .entete{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
-    .entete h2{font-size:24px;font-weight:600}
-    .entete p{color:var(--texte2);font-size:14px;margin-top:2px}
-    .btn{padding:8px 16px;border-radius:8px;border:none;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
-    .btn-vert{background:var(--vert);color:white}.btn-vert:hover{background:var(--vert-clair)}
-    .btn-rouge{background:var(--rouge);color:white}
-    .btn-contour{background:transparent;border:1px solid var(--bordure);color:var(--texte2)}
-    .btn-contour:hover{border-color:var(--vert-clair);color:var(--texte)}
+    #info-utilisateur{font-size:12px;color:var(--texte2)}
+    .btn-decon{background:none;border:1px solid var(--bordure);color:var(--texte2);padding:6px 12px;border-radius:6px;font-size:11px;cursor:pointer;margin-top:8px;width:100%;font-family:'Space Grotesk',sans-serif}
+    .btn-decon:hover{border-color:var(--rouge);color:var(--rouge)}
+
+    /* MAIN */
+    .principal{margin-left:230px;padding:28px;min-height:100vh}
+    .entete{margin-bottom:28px}
+    .entete h2{font-size:26px;font-weight:700}
+    .entete p{color:var(--texte2);font-size:14px;margin-top:4px}
+
+    /* BOUTONS */
+    .btn{padding:9px 18px;border-radius:8px;border:none;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s}
+    .btn-vert{background:var(--vert);color:white}.btn-vert:hover{background:var(--vert-clair);color:#0D1F15}
+    .btn-rouge{background:var(--rouge);color:white}.btn-rouge:hover{opacity:.85}
+    .btn-contour{background:transparent;border:1px solid var(--bordure);color:var(--texte2)}.btn-contour:hover{border-color:var(--vert-clair);color:var(--texte)}
+    .btn-or{background:var(--or);color:#0D1F15}.btn-or:hover{opacity:.85}
+
+    /* SECTIONS */
     .section{display:none}.section.active{display:block}
+
+    /* KPI */
     .grille-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
     .kpi{background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:20px;position:relative;overflow:hidden}
     .kpi::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
-    .kpi.vert::before{background:var(--vert-clair)}.kpi.or::before{background:var(--or)}.kpi.rouge::before{background:var(--rouge)}.kpi.bleu::before{background:var(--bleu)}
-    .kpi-label{font-size:12px;color:var(--texte2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
-    .kpi-valeur{font-size:36px;font-weight:700;margin:8px 0 4px;font-family:'DM Mono',monospace}
+    .kpi.vert::before{background:var(--vert-clair)}.kpi.or::before{background:var(--or)}
+    .kpi.rouge::before{background:var(--rouge)}.kpi.bleu::before{background:var(--bleu)}
+    .kpi-icone{position:absolute;top:16px;right:16px;font-size:28px;opacity:.3}
+    .kpi-label{font-size:11px;color:var(--texte2);font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+    .kpi-valeur{font-size:38px;font-weight:700;margin:8px 0 4px;font-family:'DM Mono',monospace}
     .kpi-sous{font-size:12px;color:var(--texte2)}
-    .kpi-icone{position:absolute;top:16px;right:16px;font-size:24px;opacity:.4}
+
+    /* GRAPHIQUES */
     .grille-graphiques{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
     .carte{background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:20px}
-    .carte h3{font-size:14px;font-weight:600;color:var(--texte2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
-    .carte canvas{max-height:200px}
-    .tableau-zone{overflow-x:auto}
+    .carte h3{font-size:12px;font-weight:600;color:var(--texte2);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px}
+    .carte canvas{max-height:210px}
+
+    /* TABLEAUX */
+    .tableau-zone{overflow-x:auto;border-radius:8px}
     table{width:100%;border-collapse:collapse;font-size:13px}
-    thead tr{border-bottom:1px solid var(--bordure)}
-    th{padding:10px 14px;text-align:left;color:var(--texte2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-    td{padding:12px 14px;border-bottom:1px solid rgba(30,61,40,.5)}
+    thead tr{border-bottom:2px solid var(--bordure)}
+    th{padding:11px 14px;text-align:left;color:var(--texte2);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+    td{padding:13px 14px;border-bottom:1px solid rgba(30,61,40,.4)}
+    tr:last-child td{border-bottom:none}
     tr:hover td{background:rgba(46,204,113,.04)}
     .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
     .badge.attente{background:rgba(243,156,18,.15);color:var(--orange)}
     .badge.cours{background:rgba(52,152,219,.15);color:var(--bleu)}
     .badge.traite{background:rgba(46,204,113,.15);color:var(--vert-clair)}
-    .formulaire{max-width:520px}
-    .champ{margin-bottom:16px}
-    .champ label{display:block;font-size:13px;color:var(--texte2);margin-bottom:6px}
-    .champ input,.champ select{width:100%;background:var(--fond2);border:1px solid var(--bordure);color:var(--texte);padding:10px 14px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:14px}
-    .champ input:focus,.champ select:focus{outline:none;border-color:var(--vert-clair)}
-    .alerte{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px;display:none}
-    .alerte.succes{background:rgba(46,204,113,.1);border:1px solid var(--vert);color:var(--vert-clair);display:block}
-    .alerte.erreur{background:rgba(231,76,60,.1);border:1px solid var(--rouge);color:var(--rouge);display:block}
-    .zones-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
-    .zone-item{background:var(--fond2);border:1px solid var(--bordure);border-radius:8px;padding:14px 10px;text-align:center}
-    .zone-nom{font-size:13px;font-weight:600;margin-bottom:4px}
-    .zone-nb{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;color:var(--vert-clair)}
-    .zone-label{font-size:10px;color:var(--texte2)}
-    .chargement{display:flex;align-items:center;gap:8px;color:var(--texte2);font-size:13px;padding:20px 0}
-    .spinner{width:16px;height:16px;border:2px solid var(--bordure);border-top-color:var(--vert-clair);border-radius:50%;animation:spin .8s linear infinite}
+    .badge.admin{background:rgba(212,160,23,.15);color:var(--or)}
+    .badge.operateur{background:rgba(52,152,219,.15);color:var(--bleu)}
+    .badge.citoyen{background:rgba(126,184,150,.15);color:var(--texte2)}
+    .actions-ligne{display:flex;gap:6px}
+
+    /* FORMULAIRES */
+    .formulaire{max-width:540px}
+    .champ{margin-bottom:18px}
+    .champ label{display:block;font-size:13px;color:var(--texte2);margin-bottom:7px;font-weight:500}
+    .champ input,.champ select,.champ textarea{width:100%;background:var(--fond2);border:1px solid var(--bordure);color:var(--texte);padding:11px 14px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:14px;transition:border-color .2s}
+    .champ input:focus,.champ select:focus,.champ textarea:focus{outline:none;border-color:var(--vert-clair)}
+    .champ select option{background:var(--fond2)}
+    .alerte{padding:12px 16px;border-radius:8px;margin-bottom:16px;font-size:13px}
+    .alerte.succes{background:rgba(46,204,113,.1);border:1px solid var(--vert);color:var(--vert-clair)}
+    .alerte.erreur{background:rgba(231,76,60,.1);border:1px solid var(--rouge);color:var(--rouge)}
+
+    /* ZONES */
+    .zones-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+    .zone-item{background:var(--fond2);border:1px solid var(--bordure);border-radius:10px;padding:16px 12px;text-align:center;transition:border-color .2s}
+    .zone-item:hover{border-color:var(--vert)}
+    .zone-nom{font-size:13px;font-weight:600;margin-bottom:6px}
+    .zone-nb{font-size:28px;font-weight:700;font-family:'DM Mono',monospace}
+    .zone-label{font-size:10px;color:var(--texte2);margin-top:2px}
+    .barre-zone{height:4px;border-radius:2px;margin-top:8px}
+
+    /* CHARGEMENT */
+    .chargement{display:flex;align-items:center;gap:8px;color:var(--texte2);font-size:13px;padding:24px 0}
+    .spinner{width:16px;height:16px;border:2px solid var(--bordure);border-top-color:var(--vert-clair);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0}
     @keyframes spin{to{transform:rotate(360deg)}}
-    #ecran-login{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--fond)}
-    .login-boite{background:var(--carte);border:1px solid var(--bordure);border-radius:16px;padding:40px;width:380px}
-    .login-boite h1{font-size:28px;font-weight:700;color:var(--vert-clair);margin-bottom:4px}
-    .login-boite h1 span{color:var(--or)}
-    .login-boite p{color:var(--texte2);font-size:14px;margin-bottom:28px}
-    #app{display:none}
-    .actions-ligne{display:flex;gap:8px}
+
+    /* FILTRE */
+    .barre-filtres{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+    .barre-filtres select,.barre-filtres input{background:var(--fond2);border:1px solid var(--bordure);color:var(--texte);padding:8px 12px;border-radius:8px;font-family:'Space Grotesk',sans-serif;font-size:13px}
+
+    /* STATS MINI */
+    .grille-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}
+    .mini-stat{background:var(--fond2);border:1px solid var(--bordure);border-radius:8px;padding:14px;text-align:center}
+    .mini-stat .val{font-size:24px;font-weight:700;font-family:'DM Mono',monospace}
+    .mini-stat .lab{font-size:11px;color:var(--texte2);margin-top:2px}
+
+    /* PAGINATION */
+    .pagination{display:flex;gap:6px;justify-content:flex-end;margin-top:14px}
+    .pagination button{background:var(--fond2);border:1px solid var(--bordure);color:var(--texte2);padding:5px 12px;border-radius:6px;cursor:pointer;font-size:12px}
+    .pagination button.actif,.pagination button:hover{border-color:var(--vert-clair);color:var(--texte)}
+
+    /* RESPONSIVE */
+    @media(max-width:900px){
+      .grille-kpi{grid-template-columns:repeat(2,1fr)}
+      .grille-graphiques{grid-template-columns:1fr}
+    }
   </style>
 </head>
 <body>
+
+<!-- ECRAN LOGIN -->
 <div id="ecran-login">
   <div class="login-boite">
-    <h1>Eco<span>Sen</span></h1>
-    <p>Plateforme de gestion des déchets — Dakar</p>
+    <div class="login-logo">Eco<span>Sen</span> Network</div>
+    <div class="login-sous">Plateforme de surveillance des déchets — Dakar, Sénégal</div>
+    <div class="login-badge">🌿 Connecté à Railway</div>
     <div id="alerte-login"></div>
-    <div class="champ"><label>Nom d'utilisateur</label><input type="text" id="login-user" value="admin"/></div>
-    <div class="champ"><label>Mot de passe</label><input type="password" id="login-mdp" value="ecosen2025"/></div>
-    <button class="btn btn-vert" style="width:100%;padding:12px;font-size:15px;" onclick="seConnecter()">Se connecter</button>
-    <p style="text-align:center;margin-top:14px;font-size:12px;color:var(--texte2)">API Railway connectée</p>
+    <div class="champ">
+      <label>Nom d'utilisateur</label>
+      <input type="text" id="login-user" placeholder="admin" autocomplete="username"/>
+    </div>
+    <div class="champ">
+      <label>Mot de passe</label>
+      <input type="password" id="login-mdp" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn btn-vert" style="width:100%;padding:13px;font-size:15px" onclick="seConnecter()">
+      🔐 Se connecter
+    </button>
+    <p style="text-align:center;margin-top:16px;font-size:11px;color:var(--texte2)">
+      admin / ecosen2025 &nbsp;·&nbsp; operateur / op1234
+    </p>
   </div>
 </div>
-<div id="app">
+
+<!-- APPLICATION -->
+<div id="app" style="display:none">
   <div class="sidebar">
-    <div class="logo"><h1>Eco<span>Sen</span></h1><p>Réseau de surveillance</p></div>
+    <div class="logo">
+      <h1>Eco<span>Sen</span></h1>
+      <p>Réseau de surveillance</p>
+    </div>
     <nav>
-      <a class="actif" onclick="afficherSection('tableau-bord',this)"><span>📊</span> Tableau de bord</a>
-      <a onclick="afficherSection('signalements',this)"><span>🗂</span> Signalements</a>
-      <a onclick="afficherSection('ajouter',this)"><span>➕</span> Nouveau signal</a>
-      <a onclick="afficherSection('zones',this)"><span>🗺️</span> Zones</a>
-      <a onclick="afficherSection('utilisateurs',this)"><span>👥</span> Utilisateurs</a>
+      <a class="actif" onclick="afficherSection('tableau-bord',this)">
+        <span class="icone">📊</span> Tableau de bord
+      </a>
+      <a onclick="afficherSection('signalements',this)">
+        <span class="icone">🗂️</span> Signalements
+      </a>
+      <a onclick="afficherSection('ajouter',this)">
+        <span class="icone">➕</span> Nouveau signal
+      </a>
+      <a onclick="afficherSection('zones',this)">
+        <span class="icone">🗺️</span> Zones critiques
+      </a>
+      <a onclick="afficherSection('utilisateurs',this)">
+        <span class="icone">👥</span> Utilisateurs
+      </a>
+      <a onclick="afficherSection('apropos',this)">
+        <span class="icone">ℹ️</span> À propos
+      </a>
     </nav>
     <div class="sidebar-bas">
-      <div class="statut-api"><div class="point" id="point-statut"></div><span id="texte-statut">Vérification…</span></div>
-      <div id="info-utilisateur" style="margin-bottom:8px"></div>
-      <button class="btn btn-contour" style="width:100%;font-size:12px" onclick="seDeconnecter()">Déconnexion</button>
+      <div class="statut-api">
+        <div class="point" id="point-statut"></div>
+        <span id="texte-statut">Vérification…</span>
+      </div>
+      <div id="info-utilisateur"></div>
+      <button class="btn-decon" onclick="seDeconnecter()">⎋ Déconnexion</button>
     </div>
   </div>
+
   <div class="principal">
+
+    <!-- TABLEAU DE BORD -->
     <div id="tableau-bord" class="section active">
-      <div class="entete"><div><h2>Tableau de bord</h2><p>Vue d'ensemble — EcoSen Dakar</p></div><button class="btn btn-contour" onclick="chargerStats()">↻ Actualiser</button></div>
-      <div id="chargement-stats" class="chargement"><div class="spinner"></div> Chargement…</div>
-      <div class="grille-kpi" id="kpi-zone" style="display:none">
-        <div class="kpi vert"><span class="kpi-icone">📋</span><div class="kpi-label">Total</div><div class="kpi-valeur" id="kpi-total">—</div><div class="kpi-sous">Tous statuts</div></div>
-        <div class="kpi or"><span class="kpi-icone">⏳</span><div class="kpi-label">En attente</div><div class="kpi-valeur" id="kpi-attente">—</div><div class="kpi-sous">À traiter</div></div>
-        <div class="kpi bleu"><span class="kpi-icone">⚙️</span><div class="kpi-label">En cours</div><div class="kpi-valeur" id="kpi-cours">—</div><div class="kpi-sous">En traitement</div></div>
-        <div class="kpi rouge"><span class="kpi-icone">✅</span><div class="kpi-label">Taux traitement</div><div class="kpi-valeur" id="kpi-taux">—</div><div class="kpi-sous">Traités / Total</div></div>
+      <div class="entete">
+        <h2>📊 Tableau de bord</h2>
+        <p>Vue d'ensemble en temps réel — <span id="date-affichage"></span></p>
       </div>
-      <div class="grille-graphiques">
-        <div class="carte"><h3>Répartition par statut</h3><canvas id="graphique-statut"></canvas></div>
-        <div class="carte"><h3>Signalements par zone</h3><canvas id="graphique-zones"></canvas></div>
-      </div>
-    </div>
-    <div id="signalements" class="section">
-      <div class="entete"><div><h2>Signalements</h2><p>Liste complète</p></div><button class="btn btn-vert" onclick="afficherSection('ajouter',null)">+ Nouveau</button></div>
-      <div class="carte">
-        <div id="chargement-signalements" class="chargement"><div class="spinner"></div> Chargement…</div>
-        <div class="tableau-zone" id="tableau-signalements" style="display:none"></div>
-      </div>
-    </div>
-    <div id="ajouter" class="section">
-      <div class="entete"><div><h2>Nouveau signalement</h2><p>Soumettre un signalement</p></div></div>
-      <div class="carte"><div id="alerte-ajout"></div>
-        <div class="formulaire">
-          <div class="champ"><label>Type</label><select id="type-signal"><option>Déchets sauvages</option><option>Déchets ménagers</option><option>Détournement illégal</option><option>Air pollué</option><option>Eau contaminée</option></select></div>
-          <div class="champ"><label>Zone</label><select id="zone-signal"><option>Plateau du Dakar</option><option>Pikine</option><option>Guédiawaye</option><option>Rufisque</option><option>Thiès</option><option>Parcelles Assainies</option><option>Yoff</option></select></div>
-          <div class="champ"><label>Date</label><input type="date" id="date-signal"/></div>
-          <button class="btn btn-vert" onclick="ajouterSignalement()">Soumettre</button>
+      <div id="chargement-stats" class="chargement"><div class="spinner"></div> Chargement des statistiques…</div>
+      <div id="kpi-zone" style="display:none">
+        <div class="grille-kpi">
+          <div class="kpi vert">
+            <div class="kpi-icone">📋</div>
+            <div class="kpi-label">Total signalements</div>
+            <div class="kpi-valeur" id="kpi-total">—</div>
+            <div class="kpi-sous">Tous statuts confondus</div>
+          </div>
+          <div class="kpi orange">
+            <div class="kpi-icone">⏳</div>
+            <div class="kpi-label">En attente</div>
+            <div class="kpi-valeur" id="kpi-attente" style="color:var(--orange)">—</div>
+            <div class="kpi-sous">À traiter</div>
+          </div>
+          <div class="kpi bleu">
+            <div class="kpi-icone">🔄</div>
+            <div class="kpi-label">En cours</div>
+            <div class="kpi-valeur" id="kpi-cours" style="color:var(--bleu)">—</div>
+            <div class="kpi-sous">En traitement</div>
+          </div>
+          <div class="kpi or">
+            <div class="kpi-icone">✅</div>
+            <div class="kpi-label">Taux de traitement</div>
+            <div class="kpi-valeur" id="kpi-taux" style="color:var(--or)">—</div>
+            <div class="kpi-sous">Signalements traités</div>
+          </div>
+        </div>
+        <div class="grille-graphiques">
+          <div class="carte">
+            <h3>Répartition par statut</h3>
+            <canvas id="graphique-statut"></canvas>
+          </div>
+          <div class="carte">
+            <h3>Top 5 zones les plus actives</h3>
+            <canvas id="graphique-zones"></canvas>
+          </div>
+        </div>
+        <div class="carte">
+          <h3>5 derniers signalements</h3>
+          <div id="derniers-signalements"><div class="chargement"><div class="spinner"></div> Chargement…</div></div>
         </div>
       </div>
     </div>
+
+    <!-- SIGNALEMENTS -->
+    <div id="signalements" class="section">
+      <div class="entete">
+        <h2>🗂️ Signalements</h2>
+        <p>Gestion complète de tous les signalements</p>
+      </div>
+      <div class="barre-filtres">
+        <select id="filtre-statut" onchange="appliquerFiltres()">
+          <option value="">Tous les statuts</option>
+          <option value="En attente">En attente</option>
+          <option value="En cours">En cours</option>
+          <option value="Traite">Traités</option>
+        </select>
+        <select id="filtre-zone" onchange="appliquerFiltres()">
+          <option value="">Toutes les zones</option>
+        </select>
+        <input type="text" id="filtre-recherche" placeholder="🔍 Rechercher…" oninput="appliquerFiltres()"/>
+        <button class="btn btn-contour" onclick="reinitialiserFiltres()">✕ Réinitialiser</button>
+        <button class="btn btn-vert" onclick="chargerSignalements()" style="margin-left:auto">🔄 Actualiser</button>
+      </div>
+      <div id="chargement-signalements" class="chargement"><div class="spinner"></div> Chargement…</div>
+      <div class="carte" style="display:none" id="conteneur-tableau">
+        <div class="tableau-zone" id="tableau-signalements"></div>
+        <div class="pagination" id="pagination-signalements"></div>
+      </div>
+    </div>
+
+    <!-- AJOUTER SIGNALEMENT -->
+    <div id="ajouter" class="section">
+      <div class="entete">
+        <h2>➕ Nouveau signalement</h2>
+        <p>Déclarer un incident environnemental</p>
+      </div>
+      <div class="carte formulaire">
+        <div id="alerte-ajout"></div>
+        <div class="champ">
+          <label>Type d'incident *</label>
+          <select id="type-signal">
+            <option value="">— Sélectionner —</option>
+            <option value="Dechets sauvages">🗑️ Déchets sauvages</option>
+            <option value="Deversement illegal">⚠️ Déversement illégal</option>
+            <option value="Pollution air">🌫️ Pollution de l'air</option>
+            <option value="Eau contaminee">💧 Eau contaminée</option>
+            <option value="Bruit excessif">🔊 Bruit excessif</option>
+            <option value="Autre">📌 Autre</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label>Zone / Localisation *</label>
+          <select id="zone-signal">
+            <option value="">— Sélectionner —</option>
+            <option value="Dakar Plateau">Dakar Plateau</option>
+            <option value="Pikine">Pikine</option>
+            <option value="Guediawaye">Guédiawaye</option>
+            <option value="Rufisque">Rufisque</option>
+            <option value="Thies">Thiès</option>
+            <option value="Yoff">Yoff</option>
+            <option value="Parcelles Assainies">Parcelles Assainies</option>
+            <option value="Grand Dakar">Grand Dakar</option>
+            <option value="Medina">Médina</option>
+            <option value="Fann">Fann</option>
+            <option value="Point E">Point E</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+        <div class="champ">
+          <label>Date du signalement</label>
+          <input type="date" id="date-signal"/>
+        </div>
+        <div class="champ">
+          <label>Statut initial</label>
+          <select id="statut-signal">
+            <option value="En attente">En attente</option>
+            <option value="En cours">En cours</option>
+          </select>
+        </div>
+        <button class="btn btn-vert" onclick="ajouterSignalement()" style="padding:12px 28px">
+          ✅ Enregistrer le signalement
+        </button>
+      </div>
+    </div>
+
+    <!-- ZONES CRITIQUES -->
     <div id="zones" class="section">
-      <div class="entete"><div><h2>Zones</h2><p>Répartition géographique</p></div><button class="btn btn-contour" onclick="chargerZones()">↻ Actualiser</button></div>
-      <div class="carte"><h3>🗺️ Grand Dakar</h3><div class="zones-grid" id="grille-zones"><div class="chargement"><div class="spinner"></div> Chargement…</div></div></div>
+      <div class="entete">
+        <h2>🗺️ Zones critiques</h2>
+        <p>Analyse géographique des incidents</p>
+      </div>
+      <div id="chargement-zones" class="chargement"><div class="spinner"></div> Chargement…</div>
+      <div id="contenu-zones" style="display:none">
+        <div class="carte" style="margin-bottom:16px">
+          <h3>Signalements par zone</h3>
+          <canvas id="graphique-zones-detail" style="max-height:260px"></canvas>
+        </div>
+        <div class="zones-grid" id="grille-zones"></div>
+      </div>
     </div>
+
+    <!-- UTILISATEURS -->
     <div id="utilisateurs" class="section">
-      <div class="entete"><div><h2>Utilisateurs</h2><p>Comptes du système</p></div></div>
-      <div class="carte"><div id="chargement-users" class="chargement"><div class="spinner"></div> Chargement…</div><div id="tableau-users" style="display:none"></div></div>
+      <div class="entete">
+        <h2>👥 Utilisateurs</h2>
+        <p>Gestion des comptes de la plateforme</p>
+      </div>
+      <div id="chargement-users" class="chargement"><div class="spinner"></div> Chargement…</div>
+      <div class="carte" style="display:none" id="conteneur-users">
+        <div class="tableau-zone" id="tableau-users"></div>
+      </div>
     </div>
-  </div>
-</div>
+
+    <!-- À PROPOS -->
+    <div id="apropos" class="section">
+      <div class="entete">
+        <h2>ℹ️ À propos d'EcoSen Network</h2>
+        <p>Informations sur la plateforme</p>
+      </div>
+      <div class="grille-graphiques">
+        <div class="carte">
+          <h3>Présentation du projet</h3>
+          <div style="font-size:14px;color:var(--texte2);line-height:1.8;margin-top:8px">
+            <p style="margin-bottom:12px"><strong style="color:var(--texte)">EcoSen Network</strong> est une plateforme de surveillance et de gestion des déchets développée pour la ville de Dakar, Sénégal.</p>
+            <p style="margin-bottom:12px">Elle permet aux citoyens, opérateurs et administrateurs de signaler, suivre et traiter les incidents environnementaux en temps réel.</p>
+            <p>Développé dans le cadre du projet de fin d'études à l'<strong style="color:var(--texte)">Institut Africain de Management (IAM)</strong>.</p>
+          </div>
+        </div>
+        <div class="carte">
+          <h3>Stack technique</h3>
+          <div style="font-size:13px;color:var(--texte2);line-height:2;margin-top:8px">
+            <div>🟢 <strong style="color:var(--texte)">Backend :</strong> Node.js / Express</div>
+            <div>🗄️ <strong style="color:var(--texte)">Base de données :</strong> MySQL (Railway)</div>
+            <div>🔐 <strong style="color:var(--texte)">Auth :</strong> JWT maison</div>
+            <div>🌐 <strong style="color:var(--texte)">Frontend :</strong> HTML5 / CSS3 / JS vanilla</div>
+            <div>📊 <strong style="color:var(--texte)">Graphiques :</strong> Chart.js 4</div>
+            <div>🚀 <strong style="color:var(--texte)">Déploiement :</strong> Railway</div>
+            <div>📦 <strong style="color:var(--texte)">Version :</strong> 2.0.0</div>
+          </div>
+        </div>
+      </div>
+      <div class="carte">
+        <h3>Comptes de démonstration</h3>
+        <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap">
+          <div style="background:var(--fond2);border:1px solid var(--bordure);border-radius:8px;padding:16px;flex:1;min-width:200px">
+            <div style="color:var(--or);font-weight:600;margin-bottom:6px">👑 Administrateur</div>
+            <div style="font-size:13px;color:var(--texte2)">Identifiant : <strong style="color:var(--texte);font-family:'DM Mono',monospace">admin</strong></div>
+            <div style="font-size:13px;color:var(--texte2)">Mot de passe : <strong style="color:var(--texte);font-family:'DM Mono',monospace">ecosen2025</strong></div>
+          </div>
+          <div style="background:var(--fond2);border:1px solid var(--bordure);border-radius:8px;padding:16px;flex:1;min-width:200px">
+            <div style="color:var(--bleu);font-weight:600;margin-bottom:6px">🔧 Opérateur</div>
+            <div style="font-size:13px;color:var(--texte2)">Identifiant : <strong style="color:var(--texte);font-family:'DM Mono',monospace">operateur</strong></div>
+            <div style="font-size:13px;color:var(--texte2)">Mot de passe : <strong style="color:var(--texte);font-family:'DM Mono',monospace">op1234</strong></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- fin .principal -->
+</div><!-- fin #app -->
+
 <script>
-const API='https://ecosen-network-production.up.railway.app';
-let TOKEN='';
-let gS=null,gZ=null;
-async function seConnecter(){
-  const u=document.getElementById('login-user').value;
-  const m=document.getElementById('login-mdp').value;
-  const al=document.getElementById('alerte-login');
-  al.innerHTML='';
-  try{
-    const r=await fetch(API+'/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nom_utilisateur:u,mot_de_passe:m})});
-    const d=await r.json();
-    if(!r.ok)throw new Error(d.erreur||'Erreur');
-    TOKEN=d.jeton;
-    document.getElementById('ecran-login').style.display='none';
-    document.getElementById('app').style.display='block';
-    document.getElementById('info-utilisateur').innerHTML='<strong style="color:var(--texte)">'+d.nom_utilisateur+'</strong><br><span style="font-size:11px;color:var(--or)">'+d.rôle+'</span>';
-    verifierAPI();chargerStats();
-  }catch(e){al.innerHTML='<div class="alerte erreur">'+e.message+'</div>';}
-}
-function seDeconnecter(){TOKEN='';document.getElementById('app').style.display='none';document.getElementById('ecran-login').style.display='flex';}
-async function verifierAPI(){
-  try{await fetch(API+'/');document.getElementById('point-statut').className='point en-ligne';document.getElementById('texte-statut').textContent='API en ligne';}
-  catch{document.getElementById('point-statut').className='point hors-ligne';document.getElementById('texte-statut').textContent='Hors ligne';}
-}
-async function chargerStats(){
-  document.getElementById('chargement-stats').style.display='flex';
-  document.getElementById('kpi-zone').style.display='none';
-  try{
-    const r=await fetch(API+'/api/stats',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const d=await r.json();
-    document.getElementById('kpi-total').textContent=d.total;
-    document.getElementById('kpi-attente').textContent=d.enAttente;
-    document.getElementById('kpi-cours').textContent=d.enCours;
-    document.getElementById('kpi-taux').textContent=d.tauxTraitement+'%';
-    document.getElementById('chargement-stats').style.display='none';
-    document.getElementById('kpi-zone').style.display='grid';
-    if(gS)gS.destroy();
-    gS=new Chart(document.getElementById('graphique-statut'),{type:'doughnut',data:{labels:['En attente','En cours','Traités'],datasets:[{data:[d.enAttente,d.enCours,d.total-d.enAttente-d.enCours],backgroundColor:['#F39C12','#3498DB','#2ECC71'],borderWidth:0}]},options:{plugins:{legend:{labels:{color:'#7DB896'}}},cutout:'65%'}});
-    chargerSignalementsPourGraphique();
-  }catch(e){document.getElementById('chargement-stats').innerHTML='<span style="color:var(--rouge)">Erreur: '+e.message+'</span>';}
-}
-async function chargerSignalements(){
-  document.getElementById('chargement-signalements').style.display='flex';
-  document.getElementById('tableau-signalements').style.display='none';
-  try{
-    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const l=await r.json();
-    const z=document.getElementById('tableau-signalements');
-    if(!l.length){z.innerHTML='<p style="color:var(--texte2);padding:20px">Aucun signalement.</p>';}
-    else{z.innerHTML='<table><thead><tr><th>#</th><th>Type</th><th>Zone</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody>'+l.map(s=>'<tr><td style="font-family:monospace;color:var(--texte2)">'+s.id+'</td><td>'+s.type+'</td><td>'+s.zone+'</td><td>'+badge(s.statut)+'</td><td style="font-size:12px;color:var(--texte2)">'+new Date(s.date).toLocaleDateString('fr-FR')+'</td><td><div class="actions-ligne"><button class="btn btn-contour" style="font-size:11px;padding:4px 8px" onclick="changerStatut('+s.id+','En cours')">▶️</button><button class="btn btn-vert" style="font-size:11px;padding:4px 8px" onclick="changerStatut('+s.id+','Traité')">✓</button><button class="btn btn-rouge" style="font-size:11px;padding:4px 8px" onclick="supprimerSignalement('+s.id+')">✕</button></div></td></tr>').join('')+'</tbody></table>';}
-    document.getElementById('chargement-signalements').style.display='none';
-    z.style.display='block';
-  }catch(e){document.getElementById('chargement-signalements').innerHTML='<span style="color:var(--rouge)">Erreur: '+e.message+'</span>';}
-}
-function badge(s){const c=s==='En attente'?'attente':s==='En cours'?'cours':'traite';return '<span class="badge '+c+'">'+s+'</span>';}
-async function changerStatut(id,statut){await fetch(API+'/api/signalements/'+id,{method:'PUT',headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({statut})});chargerSignalements();chargerStats();}
-async function supprimerSignalement(id){if(!confirm('Supprimer ?'))return;await fetch(API+'/api/signalements/'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+TOKEN}});chargerSignalements();chargerStats();}
-async function ajouterSignalement(){
-  const type=document.getElementById('type-signal').value;
-  const zone=document.getElementById('zone-signal').value;
-  const date=document.getElementById('date-signal').value||new Date().toISOString().split('T')[0];
-  const al=document.getElementById('alerte-ajout');
-  try{
-    const r=await fetch(API+'/api/signalements',{method:'POST',headers:{'Authorization':'Bearer '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify({taper:type,zone,date})});
-    const d=await r.json();
-    al.innerHTML='<div class="alerte succes">✅ Signalement #'+d.identifiant+' ajouté !</div>';
-    setTimeout(()=>al.innerHTML='',3000);
+const API = 'https://ecosen-network-production.up.railway.app';
+let TOKEN = '';
+let tousSignalements = [];
+let gStatut = null, gZones = null, gZonesDetail = null;
+let pageActuelle = 1;
+const PAR_PAGE = 10;
+
+// === LOGIN ===
+async function seConnecter() {
+  const u = document.getElementById('login-user').value.trim();
+  const m = document.getElementById('login-mdp').value.trim();
+  const al = document.getElementById('alerte-login');
+  al.innerHTML = '';
+  if (!u || !m) { al.innerHTML = '<div class="alerte erreur">Veuillez remplir tous les champs.</div>'; return; }
+  try {
+    const r = await fetch(API + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: m })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Identifiants incorrects');
+    TOKEN = d.token;
+    document.getElementById('ecran-login').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('info-utilisateur').innerHTML =
+      '<strong style="color:var(--texte)">' + d.username + '</strong><br>' +
+      '<span style="font-size:11px;color:var(--or)">' + d.role + '</span>';
+    document.getElementById('date-affichage').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    verifierAPI();
     chargerStats();
-  }catch(e){al.innerHTML='<div class="alerte erreur">Erreur: '+e.message+'</div>';}
+  } catch(e) {
+    al.innerHTML = '<div class="alerte erreur">❌ ' + e.message + '</div>';
+  }
 }
-async function chargerZones(){
-  document.getElementById('grille-zones').innerHTML='<div class="chargement"><div class="spinner"></div> Chargement…</div>';
-  try{
-    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const l=await r.json();
-    const c={};l.forEach(s=>{c[s.zone]=(c[s.zone]||0)+1;});
-    const z=Object.entries(c).sort((a,b)=>b[1]-a[1]);
-    const mx=z[0]?.[1]||1;
-    document.getElementById('grille-zones').innerHTML=z.map(([n,nb])=>{const p=Math.round(nb/mx*100);const col=p>66?'#E74C3C':p>33?'#F39C12':'#2ECC71';return '<div class="zone-item"><div class="zone-nom">'+n+'</div><div class="zone-nb" style="color:'+col+'">'+nb+'</div><div class="zone-label">signalement'+(nb>1?'s':'')+'</div></div>';}).join('');
-    if(gZ)gZ.destroy();
-    gZ=new Chart(document.getElementById('graphique-zones'),{type:'bar',data:{labels:z.map(x=>x[0]),datasets:[{label:'Signalements',data:z.map(x=>x[1]),backgroundColor:'#1A7A4A',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}},y:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}}}}});
-  }catch(e){document.getElementById('grille-zones').innerHTML='<span style="color:var(--rouge)">Erreur</span>';}
+
+function seDeconnecter() {
+  TOKEN = '';
+  tousSignalements = [];
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('ecran-login').style.display = 'flex';
+  document.getElementById('login-mdp').value = '';
 }
-async function chargerSignalementsPourGraphique(){
-  try{
-    const r=await fetch(API+'/api/signalements',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const l=await r.json();
-    const c={};l.forEach(s=>{c[s.zone]=(c[s.zone]||0)+1;});
-    const z=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
-    if(gZ)gZ.destroy();
-    gZ=new Chart(document.getElementById('graphique-zones'),{type:'bar',data:{labels:z.map(x=>x[0]),datasets:[{label:'Signalements',data:z.map(x=>x[1]),backgroundColor:'#1A7A4A',borderRadius:4}]},options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}},y:{ticks:{color:'#7DB896'},grid:{color:'rgba(30,61,40,.5)'}}}}});
-  }catch{}
+
+// Appui Entrée sur login
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && document.getElementById('ecran-login').style.display !== 'none') seConnecter();
+});
+
+// === API STATUS ===
+async function verifierAPI() {
+  try {
+    await fetch(API + '/');
+    document.getElementById('point-statut').className = 'point en-ligne';
+    document.getElementById('texte-statut').textContent = 'API en ligne';
+  } catch {
+    document.getElementById('point-statut').className = 'point hors-ligne';
+    document.getElementById('texte-statut').textContent = 'Hors ligne';
+  }
 }
-async function chargerUtilisateurs(){
-  document.getElementById('chargement-users').style.display='flex';
-  document.getElementById('tableau-users').style.display='none';
-  try{
-    const r=await fetch(API+'/api/utilisateurs',{headers:{'Authorization':'Bearer '+TOKEN}});
-    const l=await r.json();
-    const z=document.getElementById('tableau-users');
-    z.innerHTML='<table><thead><tr><th>#</th><th>Nom</th><th>Rôle</th><th>Date création</th></tr></thead><tbody>'+l.map(u=>'<tr><td style="font-family:monospace;color:var(--texte2)">'+u.id+'</td><td>'+u.nom_utilisateur+'</td><td><span class="badge '+(u.role==='admin'?'traite':'cours')+'">'+u.role+'</span></td><td style="font-size:12px;color:var(--texte2)">'+new Date(u.date_creation).toLocaleDateString('fr-FR')+'</td></tr>').join('')+'</tbody></table>';
-    document.getElementById('chargement-users').style.display='none';
-    z.style.display='block';
-  }catch(e){document.getElementById('chargement-users').innerHTML='<span style="color:var(--rouge)">Erreur</span>';}
+
+// === STATS ===
+async function chargerStats() {
+  document.getElementById('chargement-stats').style.display = 'flex';
+  document.getElementById('kpi-zone').style.display = 'none';
+  try {
+    const r = await fetch(API + '/api/stats', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (!r.ok) throw new Error('Erreur stats');
+    const d = await r.json();
+    document.getElementById('kpi-total').textContent = d.total;
+    document.getElementById('kpi-attente').textContent = d.enAttente;
+    document.getElementById('kpi-cours').textContent = d.enCours;
+    document.getElementById('kpi-taux').textContent = d.tauxTraitement + '%';
+    document.getElementById('chargement-stats').style.display = 'none';
+    document.getElementById('kpi-zone').style.display = 'block';
+
+    // Graphique statut
+    if (gStatut) gStatut.destroy();
+    gStatut = new Chart(document.getElementById('graphique-statut'), {
+      type: 'doughnut',
+      data: {
+        labels: ['En attente', 'En cours', 'Traités'],
+        datasets: [{ data: [d.enAttente, d.enCours, d.traites], backgroundColor: ['#F39C12','#3498DB','#2ECC71'], borderWidth: 0 }]
+      },
+      options: { plugins: { legend: { labels: { color: '#7DB896', padding: 16 } } }, cutout: '65%' }
+    });
+
+    chargerDerniersSignalements();
+    chargerGraphiqueZones();
+  } catch(e) {
+    document.getElementById('chargement-stats').innerHTML = '<span style="color:var(--rouge)">Erreur: ' + e.message + '</span>';
+  }
 }
-function afficherSection(id,lien){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('nav a').forEach(a=>a.classList.remove('actif'));
+
+// === DERNIERS SIGNALEMENTS (dashboard) ===
+async function chargerDerniersSignalements() {
+  try {
+    const r = await fetch(API + '/api/signalements', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    const l = await r.json();
+    const derniers = l.slice(0, 5);
+    const z = document.getElementById('derniers-signalements');
+    if (!derniers.length) { z.innerHTML = '<p style="color:var(--texte2);padding:16px">Aucun signalement.</p>'; return; }
+    z.innerHTML = '<table><thead><tr><th>#</th><th>Type</th><th>Zone</th><th>Statut</th><th>Date</th></tr></thead><tbody>' +
+      derniers.map(s => '<tr><td style="font-family:\'DM Mono\',monospace;color:var(--texte2);font-size:12px">#' + s.id + '</td><td>' + s.type + '</td><td>' + s.zone + '</td><td>' + badge(s.statut) + '</td><td style="font-size:12px;color:var(--texte2)">' + formaterDate(s.date) + '</td></tr>').join('') +
+      '</tbody></table>';
+  } catch {}
+}
+
+async function chargerGraphiqueZones() {
+  try {
+    const r = await fetch(API + '/api/signalements', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    const l = await r.json();
+    const c = {};
+    l.forEach(s => { c[s.zone] = (c[s.zone] || 0) + 1; });
+    const z = Object.entries(c).sort((a,b) => b[1]-a[1]).slice(0, 5);
+    if (gZones) gZones.destroy();
+    gZones = new Chart(document.getElementById('graphique-zones'), {
+      type: 'bar',
+      data: { labels: z.map(x => x[0]), datasets: [{ label: 'Signalements', data: z.map(x => x[1]), backgroundColor: '#1A7A4A', borderRadius: 5 }] },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#7DB896' }, grid: { color: 'rgba(30,61,40,.4)' } }, y: { ticks: { color: '#7DB896', stepSize: 1 }, grid: { color: 'rgba(30,61,40,.4)' } } } }
+    });
+  } catch {}
+}
+
+// === SIGNALEMENTS (liste complète) ===
+async function chargerSignalements() {
+  document.getElementById('chargement-signalements').style.display = 'flex';
+  document.getElementById('conteneur-tableau').style.display = 'none';
+  try {
+    const r = await fetch(API + '/api/signalements', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (!r.ok) throw new Error('Erreur chargement');
+    tousSignalements = await r.json();
+    peuplerFiltreZones();
+    appliquerFiltres();
+    document.getElementById('chargement-signalements').style.display = 'none';
+    document.getElementById('conteneur-tableau').style.display = 'block';
+  } catch(e) {
+    document.getElementById('chargement-signalements').innerHTML = '<span style="color:var(--rouge)">Erreur: ' + e.message + '</span>';
+  }
+}
+
+function peuplerFiltreZones() {
+  const zones = [...new Set(tousSignalements.map(s => s.zone))].sort();
+  const sel = document.getElementById('filtre-zone');
+  sel.innerHTML = '<option value="">Toutes les zones</option>' + zones.map(z => '<option value="' + z + '">' + z + '</option>').join('');
+}
+
+function appliquerFiltres() {
+  const statut = document.getElementById('filtre-statut').value;
+  const zone = document.getElementById('filtre-zone').value;
+  const recherche = document.getElementById('filtre-recherche').value.toLowerCase();
+  let filtres = tousSignalements;
+  if (statut) filtres = filtres.filter(s => s.statut === statut);
+  if (zone) filtres = filtres.filter(s => s.zone === zone);
+  if (recherche) filtres = filtres.filter(s => s.type.toLowerCase().includes(recherche) || s.zone.toLowerCase().includes(recherche));
+  pageActuelle = 1;
+  afficherTableauPage(filtres);
+}
+
+function reinitialiserFiltres() {
+  document.getElementById('filtre-statut').value = '';
+  document.getElementById('filtre-zone').value = '';
+  document.getElementById('filtre-recherche').value = '';
+  appliquerFiltres();
+}
+
+function afficherTableauPage(liste) {
+  const z = document.getElementById('tableau-signalements');
+  const pag = document.getElementById('pagination-signalements');
+  if (!liste.length) { z.innerHTML = '<p style="color:var(--texte2);padding:20px">Aucun résultat.</p>'; pag.innerHTML = ''; return; }
+  const nbPages = Math.ceil(liste.length / PAR_PAGE);
+  const debut = (pageActuelle - 1) * PAR_PAGE;
+  const page = liste.slice(debut, debut + PAR_PAGE);
+  z.innerHTML = '<table><thead><tr><th>#</th><th>Type</th><th>Zone</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead><tbody>' +
+    page.map(s => '<tr><td style="font-family:\'DM Mono\',monospace;color:var(--texte2);font-size:12px">#' + s.id + '</td><td>' + s.type + '</td><td>' + s.zone + '</td><td>' + badge(s.statut) + '</td><td style="font-size:12px;color:var(--texte2)">' + formaterDate(s.date) + '</td><td><div class="actions-ligne"><button class="btn btn-contour" style="font-size:11px;padding:4px 8px" title="Mettre en cours" onclick="changerStatut(' + s.id + ',\'En cours\')">▶️</button><button class="btn btn-vert" style="font-size:11px;padding:4px 8px" title="Marquer traité" onclick="changerStatut(' + s.id + ',\'Traite\')">✅</button><button class="btn btn-rouge" style="font-size:11px;padding:4px 8px" title="Supprimer" onclick="supprimerSignalement(' + s.id + ')">✕</button></div></td></tr>').join('') +
+    '</tbody></table>';
+  // Pagination
+  if (nbPages <= 1) { pag.innerHTML = ''; return; }
+  let pagHTML = '';
+  for (let i = 1; i <= nbPages; i++) {
+    pagHTML += '<button class="' + (i === pageActuelle ? 'actif' : '') + '" onclick="pageActuelle=' + i + ';appliquerFiltres()">' + i + '</button>';
+  }
+  pag.innerHTML = pagHTML;
+}
+
+async function changerStatut(id, statut) {
+  try {
+    await fetch(API + '/api/signalements/' + id, {
+      method: 'PUT',
+      headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut })
+    });
+    chargerSignalements();
+    chargerStats();
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+async function supprimerSignalement(id) {
+  if (!confirm('Supprimer le signalement #' + id + ' ?')) return;
+  try {
+    await fetch(API + '/api/signalements/' + id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + TOKEN }
+    });
+    chargerSignalements();
+    chargerStats();
+  } catch(e) { alert('Erreur: ' + e.message); }
+}
+
+// === AJOUTER SIGNALEMENT ===
+async function ajouterSignalement() {
+  const type = document.getElementById('type-signal').value;
+  const zone = document.getElementById('zone-signal').value;
+  const date = document.getElementById('date-signal').value || new Date().toISOString().split('T')[0];
+  const statut = document.getElementById('statut-signal').value;
+  const al = document.getElementById('alerte-ajout');
+  al.innerHTML = '';
+  if (!type || !zone) { al.innerHTML = '<div class="alerte erreur">Veuillez remplir les champs obligatoires (*).</div>'; return; }
+  try {
+    const r = await fetch(API + '/api/signalements', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, zone, date, statut })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Erreur');
+    al.innerHTML = '<div class="alerte succes">✅ Signalement #' + d.id + ' ajouté avec succès !</div>';
+    document.getElementById('type-signal').value = '';
+    document.getElementById('zone-signal').value = '';
+    document.getElementById('date-signal').value = new Date().toISOString().split('T')[0];
+    setTimeout(() => { al.innerHTML = ''; }, 4000);
+    chargerStats();
+  } catch(e) {
+    al.innerHTML = '<div class="alerte erreur">❌ Erreur: ' + e.message + '</div>';
+  }
+}
+
+// === ZONES CRITIQUES ===
+async function chargerZones() {
+  document.getElementById('chargement-zones').style.display = 'flex';
+  document.getElementById('contenu-zones').style.display = 'none';
+  try {
+    const r = await fetch(API + '/api/signalements', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    const l = await r.json();
+    const c = {};
+    l.forEach(s => { c[s.zone] = (c[s.zone] || 0) + 1; });
+    const z = Object.entries(c).sort((a,b) => b[1]-a[1]);
+    const mx = z[0]?.[1] || 1;
+
+    // Grille zones
+    document.getElementById('grille-zones').innerHTML = z.map(([n, nb]) => {
+      const p = Math.round(nb/mx*100);
+      const col = p > 66 ? '#E74C3C' : p > 33 ? '#F39C12' : '#2ECC71';
+      return '<div class="zone-item"><div class="zone-nom">' + n + '</div><div class="zone-nb" style="color:' + col + '">' + nb + '</div><div class="zone-label">signalement' + (nb > 1 ? 's' : '') + '</div><div class="barre-zone" style="background:' + col + ';width:' + p + '%"></div></div>';
+    }).join('');
+
+    // Graphique détaillé
+    if (gZonesDetail) gZonesDetail.destroy();
+    gZonesDetail = new Chart(document.getElementById('graphique-zones-detail'), {
+      type: 'bar',
+      data: {
+        labels: z.map(x => x[0]),
+        datasets: [{
+          label: 'Signalements',
+          data: z.map(x => x[1]),
+          backgroundColor: z.map(([,nb]) => { const p=nb/mx*100; return p>66?'#E74C3C':p>33?'#F39C12':'#1A7A4A'; }),
+          borderRadius: 5
+        }]
+      },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#7DB896' }, grid: { color: 'rgba(30,61,40,.4)' } }, y: { ticks: { color: '#7DB896', stepSize: 1 }, grid: { color: 'rgba(30,61,40,.4)' } } } }
+    });
+
+    document.getElementById('chargement-zones').style.display = 'none';
+    document.getElementById('contenu-zones').style.display = 'block';
+  } catch(e) {
+    document.getElementById('chargement-zones').innerHTML = '<span style="color:var(--rouge)">Erreur: ' + e.message + '</span>';
+  }
+}
+
+// === UTILISATEURS ===
+async function chargerUtilisateurs() {
+  document.getElementById('chargement-users').style.display = 'flex';
+  document.getElementById('conteneur-users').style.display = 'none';
+  try {
+    const r = await fetch(API + '/api/utilisateurs', { headers: { 'Authorization': 'Bearer ' + TOKEN } });
+    if (!r.ok) throw new Error('Accès refusé');
+    const l = await r.json();
+    document.getElementById('tableau-users').innerHTML =
+      '<table><thead><tr><th>#</th><th>Nom d\'utilisateur</th><th>Rôle</th><th>Date de création</th></tr></thead><tbody>' +
+      l.map(u => '<tr><td style="font-family:\'DM Mono\',monospace;color:var(--texte2);font-size:12px">' + u.id + '</td><td>' + u.nom_utilisateur + '</td><td>' + badgeRole(u.role) + '</td><td style="font-size:12px;color:var(--texte2)">' + formaterDate(u.date_creation) + '</td></tr>').join('') +
+      '</tbody></table>';
+    document.getElementById('chargement-users').style.display = 'none';
+    document.getElementById('conteneur-users').style.display = 'block';
+  } catch(e) {
+    document.getElementById('chargement-users').innerHTML = '<span style="color:var(--rouge)">Erreur: ' + e.message + '</span>';
+  }
+}
+
+// === NAVIGATION ===
+function afficherSection(id, lien) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('actif'));
   document.getElementById(id).classList.add('active');
-  if(lien)lien.classList.add('actif');
-  if(id==='signalements')chargerSignalements();
-  if(id==='zones')chargerZones();
-  if(id==='utilisateurs')chargerUtilisateurs();
+  if (lien) lien.classList.add('actif');
+  if (id === 'signalements') chargerSignalements();
+  if (id === 'zones') chargerZones();
+  if (id === 'utilisateurs') chargerUtilisateurs();
+  if (id === 'tableau-bord') chargerStats();
 }
-document.getElementById('date-signal').value=new Date().toISOString().split('T')[0];
+
+// === HELPERS ===
+function badge(s) {
+  const c = s === 'En attente' ? 'attente' : s === 'En cours' ? 'cours' : 'traite';
+  return '<span class="badge ' + c + '">' + s + '</span>';
+}
+function badgeRole(r) {
+  return '<span class="badge ' + r + '">' + r + '</span>';
+}
+function formaterDate(d) {
+  if (!d) return '—';
+  try { return new Date(d).toLocaleDateString('fr-FR'); } catch { return d; }
+}
+
+// Init
+document.getElementById('date-signal').value = new Date().toISOString().split('T')[0];
 </script>
 </body>
 </html>
