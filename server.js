@@ -1,5 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+const path = require('path');
 const app = express();
 
 app.use(express.json());
@@ -14,10 +15,12 @@ app.use((req, res, next) => {
   next();
 });
 
+// Servir les fichiers statiques (dashboard HTML)
+app.use(express.static(path.join(__dirname)));
+
 // Connexion MySQL
 const pool = mysql.createPool(process.env.MYSQL_URL);
 
-// Créer les tables au démarrage
 async function initialiserDB() {
   const conn = await pool.getConnection();
   try {
@@ -42,7 +45,6 @@ async function initialiserDB() {
       )
     `);
 
-    // Insérer admin par défaut si pas encore créé
     const [rows] = await conn.execute("SELECT * FROM utilisateurs WHERE nom_utilisateur = 'admin'");
     if (rows.length === 0) {
       await conn.execute(
@@ -54,7 +56,6 @@ async function initialiserDB() {
         ['operateur', 'op1234', 'operateur']
       );
 
-      // Insérer signalements de démo
       const signalements = [
         ['Dechets sauvages', 'Dakar Plateau', 'En attente', '2025-06-20'],
         ['Deversement illegal', 'Pikine', 'Traite', '2025-06-19'],
@@ -67,8 +68,7 @@ async function initialiserDB() {
       ];
       for (const s of signalements) {
         await conn.execute(
-          "INSERT INTO signalements (type, zone, statut, date) VALUES (?, ?, ?, ?)",
-          s
+          "INSERT INTO signalements (type, zone, statut, date) VALUES (?, ?, ?, ?)", s
         );
       }
     }
@@ -78,13 +78,9 @@ async function initialiserDB() {
   }
 }
 
-// JWT maison
 function createToken(user) {
   const payload = Buffer.from(JSON.stringify({
-    id: user.id,
-    username: user.nom_utilisateur,
-    role: user.role,
-    exp: Date.now() + 86400000
+    id: user.id, username: user.nom_utilisateur, role: user.role, exp: Date.now() + 86400000
   })).toString('base64');
   return 'ecosen.' + payload + '.ok';
 }
@@ -111,41 +107,29 @@ function auth(req, res, next) {
 
 // ===== ROUTES =====
 
-// Health check
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ message: '✅ EcoSen API en ligne', version: '2.0' });
 });
 
-// Login — accepte username/password ET nom_utilisateur/mot_de_passe
 app.post('/api/login', async (req, res) => {
   try {
     const username = req.body.username || req.body.nom_utilisateur;
     const password = req.body.password || req.body.mot_de_passe;
-
-    if (!username || !password) {
-      return res.status(400).json({ error: 'Identifiants manquants' });
-    }
-
+    if (!username || !password) return res.status(400).json({ error: 'Identifiants manquants' });
     const [rows] = await pool.execute(
       "SELECT * FROM utilisateurs WHERE nom_utilisateur = ? AND mot_de_passe = ?",
       [username, password]
     );
     if (rows.length === 0) return res.status(401).json({ error: 'Identifiants incorrects' });
-
     const user = rows[0];
     const token = createToken(user);
-    res.json({
-      token,
-      username: user.nom_utilisateur,
-      role: user.role
-    });
+    res.json({ token, username: user.nom_utilisateur, role: user.role });
   } catch(e) {
     console.error('Erreur login:', e);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 });
 
-// Stats
 app.get('/api/stats', auth, async (req, res) => {
   try {
     const [total] = await pool.execute("SELECT COUNT(*) as total FROM signalements");
@@ -154,84 +138,56 @@ app.get('/api/stats', auth, async (req, res) => {
     const [enCours] = await pool.execute("SELECT COUNT(*) as nb FROM signalements WHERE statut = 'En cours'");
     const t = total[0].total;
     res.json({
-      total: t,
-      enAttente: enAttente[0].nb,
-      traites: traites[0].nb,
-      enCours: enCours[0].nb,
+      total: t, enAttente: enAttente[0].nb, traites: traites[0].nb, enCours: enCours[0].nb,
       tauxTraitement: t > 0 ? Math.round((traites[0].nb / t) * 100) : 0
     });
-  } catch(e) {
-    console.error('Erreur stats:', e);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
-// Liste signalements
 app.get('/api/signalements', auth, async (req, res) => {
   try {
     const [rows] = await pool.execute("SELECT * FROM signalements ORDER BY date DESC");
     res.json(rows);
-  } catch(e) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
-// Ajouter signalement
 app.post('/api/signalements', auth, async (req, res) => {
   try {
-    const type = req.body.type;
-    const zone = req.body.zone;
-    const statut = req.body.statut || 'En attente';
-    const date = req.body.date || new Date().toISOString().split('T')[0];
-
+    const { type, zone, statut, date } = req.body;
     if (!type || !zone) return res.status(400).json({ error: 'Type et zone requis' });
-
     const [result] = await pool.execute(
       "INSERT INTO signalements (type, zone, statut, date) VALUES (?, ?, ?, ?)",
-      [type, zone, statut, date]
+      [type, zone, statut || 'En attente', date || new Date().toISOString().split('T')[0]]
     );
     res.status(201).json({ id: result.insertId, message: 'Signalement ajouté' });
-  } catch(e) {
-    console.error('Erreur ajout:', e);
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
-// Mettre à jour statut
 app.put('/api/signalements/:id', auth, async (req, res) => {
   try {
     const { statut } = req.body;
-    if (!statut) return res.status(400).json({ error: 'Statut requis' });
-    await pool.execute(
-      "UPDATE signalements SET statut = ? WHERE id = ?",
-      [statut, req.params.id]
-    );
+    await pool.execute("UPDATE signalements SET statut = ? WHERE id = ?", [statut, req.params.id]);
     res.json({ message: 'Statut mis à jour' });
-  } catch(e) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
-// Supprimer signalement
 app.delete('/api/signalements/:id', auth, async (req, res) => {
   try {
     await pool.execute("DELETE FROM signalements WHERE id = ?", [req.params.id]);
     res.json({ message: 'Signalement supprimé' });
-  } catch(e) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
 });
 
-// Liste utilisateurs
 app.get('/api/utilisateurs', auth, async (req, res) => {
   try {
-    const [rows] = await pool.execute(
-      "SELECT id, nom_utilisateur, role, date_creation FROM utilisateurs"
-    );
+    const [rows] = await pool.execute("SELECT id, nom_utilisateur, role, date_creation FROM utilisateurs");
     res.json(rows);
-  } catch(e) {
-    res.status(500).json({ error: 'Erreur serveur' });
-  }
+  } catch(e) { res.status(500).json({ error: 'Erreur serveur' }); }
+});
+
+// Route principale → dashboard
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'ecosen_dashboard.html'));
 });
 
 const PORT = process.env.PORT || 3000;
