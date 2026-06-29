@@ -445,6 +445,7 @@ async function seConnecter() {
     document.getElementById('date-affichage').textContent = new Date().toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
     verifierAPI();
     chargerStats();
+    setTimeout(initialiserFirebase, 1500);
   } catch(e) {
     al.innerHTML = '<div class="alerte erreur">❌ ' + e.message + '</div>';
   }
@@ -770,7 +771,11 @@ async function initialiserFirebase() {
     const fcmToken = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
     if (fcmToken) {
       console.log('🔔 Token FCM obtenu:', fcmToken);
-      afficherBanniereNotif('✅ Notifications activées !', 'succes');
+      afficherBanniereNotif('✅ Notifications Firebase activées !', 'succes');
+      // Afficher token pour test
+      window._fcmToken = fcmToken;
+    } else {
+      afficherBanniereNotif('⚠️ Activez les notifications dans votre navigateur', 'info');
     }
 
     // Notifications en avant-plan
